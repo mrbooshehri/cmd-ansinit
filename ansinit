@@ -29,7 +29,15 @@ PROJECT_PLAYBOOK="$ANISBLE_HOME/${2:-project}.yaml"
 
 _init(){
 	[[ ! -d "$ANISBLE_HOME" ]] && mkdir -p $ANISBLE_HOME
-	[[ ! -d "$INVENTORY_HOME" ]] && mkdir -p $INVENTORY_HOME && touch "$INVENTORY_HOME/hosts"
+	if [[ ! -d "$INVENTORY_HOME" ]]; then 
+		mkdir -p $INVENTORY_HOME 
+		touch "$INVENTORY_HOME/hosts"
+		cat > $INVENTORY_HOME/hosts << EOF
+# [GROUP_NAM]
+# IP_ADDRESS
+# DOMAIN_NAME
+EOF
+	fi
 	[[ ! -d "$ROLES_HOME" ]] && mkdir -p $ROLES_HOME
 	[[ ! -f "$PROJECT_PLAYBOOK" ]] && touch $PROJECT_PLAYBOOK
 }

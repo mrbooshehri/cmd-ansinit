@@ -1,0 +1,131 @@
+#!/bin/bash
+
+########################################
+######## Bash Autocompletion ###########
+########################################
+
+declare -a COMMANDS=(init roladd roldel showroles invedit invadd invdel showinvs project help)
+
+if [[ -n $COMP_LINE ]]; then
+    for c in "${COMMANDS[@]}"; do
+        [[ ${c:0:${#2}} == "${2,,}" ]] && echo "$c"
+    done
+    exit
+fi
+
+########################################
+############# Variables ################
+########################################
+
+ANISBLE_HOME="$HOME/Ansible/provision"
+INVENTORY_HOME="$ANISBLE_HOME/inventory"
+ROLES_HOME="$ANISBLE_HOME/roles"
+PROJECT_PLAYBOOK="$ANISBLE_HOME/${2:-project}.yaml"
+
+
+########################################
+############## Functions ###############
+########################################
+
+_init(){
+	[[ ! -d "$ANISBLE_HOME" ]] && mkdir -p $ANISBLE_HOME
+	[[ ! -d "$INVENTORY_HOME" ]] && mkdir -p $INVENTORY_HOME && touch "$INVENTORY_HOME/hosts"
+	[[ ! -d "$ROLES_HOME" ]] && mkdir -p $ROLES_HOME
+	[[ ! -f "$PROJECT_PLAYBOOK" ]] && touch $PROJECT_PLAYBOOK
+}
+
+_add_role(){
+	[[ -z "$1" ]] && echo "Error: The role cannot be null." && exit 127
+
+	ROLE_HOME="$ROLES_HOME/$1"
+	DEFAULTS_HOME="$ROLE_HOME/defaults"
+	FILES_HOME="$ROLE_HOME/files"
+	HANDLERS_HOME="$ROLE_HOME/handlers"
+	TASKS_HOME="$ROLE_HOME/tasks"
+	META_HOME="$ROLE_HOME/meta"
+	TEAMPLATES_HOME="$ROLE_HOME/templates"
+	VARS_HOME="$ROLE_HOME/vars"
+
+	mkdir -p $ROLE_HOME
+	mkdir -p $HANDLERS_HOME
+	touch "$HANDLERS_HOME/main.yml"
+	mkdir -p $TASKS_HOME
+	touch "$TASKS_HOME/main.yml"
+	mkdir -p $META_HOME
+	touch "$META_HOME/main.yml"
+	mkdir -p $VARS_HOME
+	touch "$VARS_HOME/main.yml"
+	mkdir -p $DEFAULTS_HOME
+	touch "$DEFAULTS_HOME/main.yml"
+	mkdir -p $FILES_HOME
+	mkdir -p $TEAMPLATES_HOME
+}
+
+_del_role(){
+	[[ -z "$1" ]] && echo "Error: The role cannot be null." && exit 127
+	[[ ! -d "$ROLES_HOME/$1" ]] && echo "Role not exits!"
+	read -p "Are you sure you want to remove [ $1 ] role?([No/n],Yes/y): " RM_ANS
+	case $RM_ANS in
+		Yes|y) rm -rf $ROLES_HOME/$1 ;;
+		*) exit ;;
+	esac
+}
+
+_add_inventory(){
+	[[ -z "$1" ]] && echo "Error: The inventory cannot be null." && exit 127
+	vim $INVENTORY_HOME/$1
+}
+
+_del_inventory(){
+	[[ -z "$1" ]] && echo "Error: The inventory cannot be null." && exit 127
+	[[ ! -f "$INVENTORY_HOME/$1" ]] && echo "inventory not exits!"
+	read -p "Are you sure you want to remove [ $1 ] inventory?([No/n],Yes/y): " RM_ANS
+	case $RM_ANS in
+		Yes|y) rm -rf $INVENTORY_HOME/$1 ;;
+		*) exit ;;
+	esac
+}
+
+_edit_inventory(){
+	[[ -z "$1" ]] && echo "Error: Enter the inventory name you want to edit!" && exit 127
+	[[ -f $INVENTORY_HOME/$1 ]] && vim $INVENTORY_HOME/$1 || \
+		echo "Error: The inventory not exist, use 'ansinit invadd <inventory-name> to create a new inventory'."
+}
+_show_inventory(){
+	for inv in `ls $INVENTORY_HOME`; do
+		if [[ -s $INVENTORY_HOME/$inv ]]; then
+		echo "==> $inv <=="
+		cat $INVENTORY_HOME/$inv
+		echo
+		fi
+	done
+
+}
+
+_help(){
+	echo "simple command-line tool to manage ansible"
+	echo
+	echo "Usage: ansinit [option] [arg]"
+	echo -e "  init\t\tinitail anisble hierarchy"
+	echo -e "  roladd\tadd a new role"
+	echo -e "  roldel\tdelete an existing role"
+	echo -e "  showroles\tlist of all existing roles"
+	echo -e "  invadd\tadd a new inventory file"
+	echo -e "  invdel\tdelete an existing inventory file"
+	echo -e "  invedit\tedit an existing inventory file"
+	echo -e "  showinvs\tlist of all existing inventories"
+	echo -e "  project\tcreate a new yaml plabook"
+}
+
+case $1 in
+	init) _init ;;
+	roladd) _add_role $2 ;;
+	roldel) _del_role $2 ;;
+	showroles) tree -L 1 $ROLES_HOME ;;
+	invadd) _add_inventory $2 ;;
+	invdel) _del_inventory $2 ;;
+	invedit) _edit_inventory $2 ;;
+	showinvs) _show_inventory ;;
+	project) [[ ! -z $2 ]] && touch "$ANISBLE_HOME/$2.yml" || echo "Error: Project (playbook) name cannot be null" ;;
+	*) _help ;;
+esac

@@ -3,7 +3,7 @@ simple command-line tool to manage ansible
 
 ## Usage:
 ```bash
-ansinit [option] [arg]|
+ansinit [option] [arg]
 ```
 
 |Option|description|

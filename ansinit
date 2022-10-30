@@ -4,7 +4,7 @@
 ######## Bash Autocompletion ###########
 ########################################
 
-declare -a COMMANDS=(init roladd roldel showroles invedit invadd invdel showinvs project help)
+declare -a COMMANDS=(init roladd roldel showroles invedit invadd invdel showinvs project copykey help)
 
 if [[ -n $COMP_LINE ]]; then
     for c in "${COMMANDS[@]}"; do
@@ -99,6 +99,7 @@ _edit_inventory(){
 	[[ -f $INVENTORY_HOME/$1 ]] && vim $INVENTORY_HOME/$1 || \
 		echo "Error: The inventory not exist, use 'ansinit invadd <inventory-name> to create a new inventory'."
 }
+
 _show_inventory(){
 	for inv in `ls $INVENTORY_HOME`; do
 		if [[ -s $INVENTORY_HOME/$inv ]]; then
@@ -107,6 +108,15 @@ _show_inventory(){
 		echo
 		fi
 	done
+
+}
+
+_copy_key(){
+	[ ! $1 ~=*.pub ]  && [ ! -f $2 ] && _help && exit 127
+	while read LINE
+	do
+		`echo $LINE | awk -v KEY=$1 '{print "sshpass -p "$3" ssh-copy-id -o StrictHostKeyChecking=no -i "KEY" "$2"@"$1}'`
+	done < $2
 
 }
 
@@ -123,6 +133,15 @@ _help(){
 	echo -e "  invedit\tedit an existing inventory file"
 	echo -e "  showinvs\tlist of all existing inventories"
 	echo -e "  project\tcreate a new yaml plabook"
+	echo -e "  copykey\tcopy you public key to list of hosts"
+	echo -e 
+	echo -e "copykey usage:"
+	echo -e "  You have to pass your public key and hosts list as input parameters, like follow:"
+	echo -e "  ansinit copykey ~/.ssh/rsa.pub hosts"
+	echo -e "  --------------------------------- "
+	echo -e "  example of hosts file format:"
+	echo -e "  <ip-address> <username> <password>"
+	echo -e "  192.168.1.2 root 1234"
 }
 
 case $1 in
@@ -135,5 +154,6 @@ case $1 in
 	invedit) _edit_inventory $2 ;;
 	showinvs) _show_inventory ;;
 	project) [[ ! -z $2 ]] && touch "$ANISBLE_HOME/$2.yml" || echo "Error: Project (playbook) name cannot be null" ;;
+	copykey) _copy_key $2 $3 ;;
 	*) _help ;;
 esac
